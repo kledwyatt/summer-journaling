@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Summer Grind — Daily Tracker</title>
+<style>
+  :root {
+    --purple-light: #EEEDFE;
+    --purple-mid: #534AB7;
+    --purple-dark: #3C3489;
+    --teal-light: #E1F5EE;
+    --teal-mid: #1D9E75;
+    --teal-dark: #085041;
+    --amber-light: #FAEEDA;
+    --amber-mid: #BA7517;
+    --coral-light: #FAECE7;
+    --coral-mid: #993C1D;
+    --red-light: #FCEBEB;
+    --red-mid: #A32D2D;
+    --gray-light: #F1EFE8;
+    --gray-mid: #5F5E5A;
+    --bg: #F7F6F3;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.1);
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --text-faint: #999;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* Layout */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-left h1 { font-size: 17px; font-weight: 600; }
+  .header-left p { font-size: 13px; color: var(--text-muted); }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+
+  .main { max-width: 900px; margin: 0 auto; padding: 1.5rem; display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; }
+  @media (max-width: 720px) { .main { grid-template-columns: 1fr; } }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 1rem;
+  }
+
+  /* XP bar */
+  .xp-section { margin-bottom: 1.25rem; }
+  .xp-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+  .xp-number { font-size: 26px; font-weight: 700; color: var(--purple-mid); }
+  .xp-label { font-size: 13px; color: var(--text-muted); }
+  .xp-track { height: 8px; background: var(--gray-light); border-radius: 4px; overflow: hidden; }
+  .xp-fill { height: 100%; background: var(--purple-mid); border-radius: 4px; transition: width 0.4s ease; }
+  .xp-sublabel { font-size: 12px; color: var(--text-faint); margin-top: 5px; }
+
+  /* Metrics row */
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
+  .metric { background: var(--bg); border-radius: 8px; padding: 0.75rem; text-align: center; }
+  .metric-val { font-size: 20px; font-weight: 700; }
+  .metric-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Quest rows */
+  .quest-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .quest-row:last-child { border-bottom: none; }
+  .quest-row:hover { background: var(--bg); margin: 0 -1.25rem; padding: 10px 1.25rem; border-radius: 6px; }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 1.5px solid #ccc;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    background: white;
+  }
+  .checkbox.checked { background: var(--purple-mid); border-color: var(--purple-mid); }
+  .checkbox.checked::after {
+    content: '';
+    width: 5px; height: 9px;
+    border: 2px solid white;
+    border-top: none; border-left: none;
+    transform: rotate(45deg) translate(-1px, -1px);
+    display: block;
+  }
+
+  .quest-body { flex: 1; }
+  .quest-name { font-size: 14px; font-weight: 500; }
+  .quest-name.done { color: var(--text-faint); text-decoration: line-through; }
+  .quest-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .quest-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+  .xp-tag { font-size: 12px; font-weight: 600; color: var(--purple-mid); white-space: nowrap; }
+
+  /* Category badges */
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .b-study   { background: var(--purple-light); color: var(--purple-dark); }
+  .b-read    { background: var(--teal-light);   color: var(--teal-dark); }
+  .b-mind    { background: var(--amber-light);  color: var(--amber-mid); }
+  .b-disc    { background: var(--coral-light);  color: var(--coral-mid); }
+  .b-rec     { background: var(--gray-light);   color: var(--gray-mid); }
+
+  /* Penalty rows */
+  .pen-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .pen-row:last-child { border-bottom: none; }
+  .pen-body { flex: 1; }
+  .pen-name { font-size: 13px; font-weight: 500; }
+  .pen-cost { font-size: 12px; font-weight: 600; color: var(--red-mid); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  .pen-check {
+    width: 20px; height: 20px;
+    border-radius: 5px;
+    border: 1.5px solid #ccc;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    background: white;
+  }
+  .pen-check.applied { background: var(--red-mid); border-color: var(--red-mid); }
+  .pen-check.applied::after {
+    content: '';
+    width: 5px; height: 9px;
+    border: 2px solid white;
+    border-top: none; border-left: none;
+    transform: rotate(45deg) translate(-1px, -1px);
+    display: block;
+  }
+
+  /* Streak dots */
+  .streak-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; margin: 8px 0; }
+  .streak-day { text-align: center; }
+  .streak-dot {
+    height: 26px;
+    border-radius: 5px;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+  .streak-dot.hit { background: var(--purple-light); color: var(--purple-mid); }
+  .streak-dot.today { background: var(--purple-mid); color: white; font-weight: 600; }
+  .streak-day-lbl { font-size: 10px; color: var(--text-faint); }
+
+  /* Levels */
+  .level-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .level-item {
+    border-radius: 8px;
+    padding: 0.7rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    opacity: 0.5;
+  }
+  .level-item.unlocked { opacity: 1; background: var(--purple-light); border-color: #AFA9EC; }
+  .level-item.current { opacity: 1; background: var(--purple-mid); border-color: var(--purple-mid); }
+  .level-name { font-size: 12px; font-weight: 600; }
+  .level-item.current .level-name { color: white; }
+  .level-item.unlocked .level-name { color: var(--purple-dark); }
+  .level-range { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+  .level-item.current .level-range { color: rgba(255,255,255,0.75); }
+  .level-item.unlocked .level-range { color: var(--purple-mid); }
+
+  /* Book tracker */
+  .book-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .book-row:last-child { border-bottom: none; }
+  .book-title { flex: 1; font-size: 13px; font-weight: 500; }
+  .book-pages { font-size: 12px; color: var(--text-muted); }
+  .book-bar-wrap { height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+  .book-bar-fill { height: 100%; background: var(--teal-mid); border-radius: 3px; }
+  .book-btn { font-size: 12px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; background: white; cursor: pointer; color: var(--text-muted); white-space: nowrap; }
+  .book-btn:hover { background: var(--bg); }
+
+  /* Rewards */
+  .reward-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .reward-row:last-child { border-bottom: none; }
+  .reward-body { flex: 1; font-size: 13px; }
+  .reward-cost { font-size: 12px; font-weight: 600; color: var(--teal-mid); white-space: nowrap; flex-shrink: 0; }
+  .reward-btn {
+    font-size: 12px; padding: 4px 10px;
+    border: 1px solid var(--teal-mid); border-radius: 6px;
+    background: white; color: var(--teal-mid);
+    cursor: pointer; white-space: nowrap;
+  }
+  .reward-btn:hover { background: var(--teal-light); }
+  .reward-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: #1a1a1a; color: white;
+    padding: 10px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none; z-index: 100;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Date nav */
+  .date-nav { display: flex; align-items: center; gap: 10px; }
+  .date-nav button {
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; width: 30px; height: 30px;
+    cursor: pointer; font-size: 16px; display: flex;
+    align-items: center; justify-content: center;
+    color: var(--text-muted);
+  }
+  .date-nav button:hover { background: var(--bg); }
+  .date-display { font-size: 13px; font-weight: 500; min-width: 120px; text-align: center; }
+
+  /* Utility */
+  .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+  .section-gap { margin-bottom: 1.5rem; }
+  .right-col { }
+  .left-col { }
+  .xp-gain { color: var(--purple-mid) !important; }
+  .xp-loss { color: var(--red-mid) !important; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Summer Grind</h1>
+    <p id="header-date">Loading...</p>
+  </div>
+  <div class="header-right">
+    <div class="date-nav">
+      <button onclick="changeDay(-1)" title="Previous day">&#8249;</button>
+      <span class="date-display" id="date-display">Today</span>
+      <button onclick="changeDay(1)" title="Next day">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT COLUMN -->
+  <div class="left-col">
+
+    <!-- XP Overview -->
+    <div class="card">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-val xp-gain" id="today-xp">0</div>
+          <div class="metric-lbl">XP today</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="streak-count" style="color:var(--teal-mid);">0</div>
+          <div class="metric-lbl">day streak</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="total-xp-display" style="color:var(--amber-mid);">0</div>
+          <div class="metric-lbl">total XP</div>
+        </div>
+      </div>
+      <div class="xp-section">
+        <div class="xp-top">
+          <span class="xp-number" id="xp-big">0</span>
+          <span class="xp-label" id="next-level-label">/ 500 XP to Level 2</span>
+        </div>
+        <div class="xp-track"><div class="xp-fill" id="xp-bar" style="width:0%"></div></div>
+        <div class="xp-sublabel" id="level-label">Level 1 — Initiate</div>
+      </div>
+    </div>
+
+    <!-- Daily Quests -->
+    <div class="card">
+      <div class="card-title">Daily quests</div>
+      <div id="quest-list"></div>
+    </div>
+
+    <!-- Penalties -->
+    <div class="card">
+      <div class="card-title">Penalties — check if it happened today</div>
+      <div id="penalty-list"></div>
+    </div>
+
+    <!-- Book Tracker -->
+    <div class="card">
+      <div class="card-title">Reading tracker</div>
+      <div id="book-list"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="right-col">
+
+    <!-- Streak -->
+    <div class="card">
+      <div class="card-title">This week</div>
+      <div class="streak-row" id="streak-dots"></div>
+    </div>
+
+    <!-- Rewards -->
+    <div class="card">
+      <div class="card-title">Spend XP on rewards</div>
+      <div id="reward-list"></div>
+    </div>
+
+    <!-- Levels -->
+    <div class="card">
+      <div class="card-title">Level tiers</div>
+      <div class="level-grid" id="level-grid"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIG ─────────────────────────────────────────────────────────────────
+// Edit this section to customize quests, books, rewards, and penalties.
+
+const QUESTS = [
+  { id: 'lsat1',   name: 'LSAT drill block',        xp: 50, cat: 'study', badge: 'b-study', desc: 'Complete 2 × 25-min focused drill sessions with a real break in between' },
+  { id: 'lsat2',   name: 'Error review session',    xp: 30, cat: 'study', badge: 'b-study', desc: 'Write out explanations for every wrong answer — no skipping' },
+  { id: 'read',    name: 'Read 20 pages',            xp: 25, cat: 'read',  badge: 'b-read',  desc: 'Physical book only, no phone, no multitasking' },
+  { id: 'journal', name: 'Morning journal',          xp: 20, cat: 'mind',  badge: 'b-mind',  desc: '5 min — what\'s on your mind, one intention for the day' },
+  { id: 'meditate',name: 'Meditate 10 min',          xp: 20, cat: 'mind',  badge: 'b-mind',  desc: 'Breath focus, Headspace, or Waking Up — any consistent method' },
+  { id: 'phone',   name: 'Phone-free morning',       xp: 30, cat: 'disc',  badge: 'b-disc',  desc: 'No phone until after your first LSAT block' },
+  { id: 'eating',  name: 'Mindful eating',           xp: 25, cat: 'disc',  badge: 'b-disc',  desc: 'Eat meals without screens, no snacking after 9pm' },
+  { id: 'sleep',   name: 'In bed by midnight',       xp: 15, cat: 'rec',   badge: 'b-rec',   desc: '7+ hours is non-negotiable for ADD — protect it' },
+];
+
+const PENALTIES = [
+  { id: 'scroll',  name: 'Mindless phone scroll before noon',  xp: -20, desc: 'Opening social apps before your first LSAT block' },
+  { id: 'bedphone',name: 'Phone in bed at night',              xp: -15, desc: 'Scrolling after lights out' },
+  { id: 'binge',   name: 'Binge eating episode',               xp: -25, desc: 'Honest self-report only — no shame, just accountability' },
+  { id: 'skip',    name: 'Skipped quest with no reason',       xp: -10, desc: 'Lazy skip, not a planned rest day' },
+  { id: 'tvbinge', name: 'Unearned screen binge (2+ hrs)',     xp: -20, desc: 'TV or gaming without having earned it via rewards' },
+];
+
+const BOOKS = [
+  { id: 'b1', title: 'Thinking, Fast and Slow',    author: 'Kahneman',   total: 499, read: 0 },
+  { id: 'b2', title: 'The Obstacle Is the Way',    author: 'Ryan Holiday', total: 224, read: 0 },
+  { id: 'b3', title: 'How to Win Friends',          author: 'Carnegie',    total: 288, read: 0 },
+  { id: 'b4', title: 'The Power of Habit',          author: 'Duhigg',      total: 371, read: 0 },
+  { id: 'b5', title: 'Atomic Habits',               author: 'Clear',       total: 320, read: 0 },
+];
+
+const REWARDS = [
+  { id: 'r1', name: '1 hr guilt-free TV / gaming', cost: 100 },
+  { id: 'r2', name: 'Full evening off screens',     cost: 200 },
+  { id: 'r3', name: 'Gaming session (3 hrs)',        cost: 300 },
+  { id: 'r4', name: 'Full day off — zero guilt',    cost: 500 },
+];
+
+const LEVELS = [
+  { name: 'Initiate',  min: 0,     max: 499 },
+  { name: 'Scholar',   min: 500,   max: 1999 },
+  { name: 'Jurist',    min: 2000,  max: 4999 },
+  { name: 'Counsel',   min: 5000,  max: 9999 },
+  { name: 'Advocate',  min: 10000, max: 17999 },
+  { name: 'Prestige',  min: 18000, max: Infinity },
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+const TODAY_KEY = () => {
+  const d = new Date(currentDate);
+  return d.toISOString().slice(0, 10);
+};
+
+let currentDate = new Date();
+currentDate.setHours(0, 0, 0, 0);
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('summergrind') || '{}'); }
+  catch { return {}; }
+}
+function saveState(s) {
+  localStorage.setItem('summergrind', JSON.stringify(s));
+}
+
+function getDayData(state, key) {
+  if (!state.days) state.days = {};
+  if (!state.days[key]) state.days[key] = { quests: {}, penalties: {} };
+  return state.days[key];
+}
+
+function getTotalXP(state) {
+  if (!state.days) return 0;
+  let total = 0;
+  for (const day of Object.values(state.days)) {
+    for (const [id, val] of Object.entries(day.quests || {})) {
+      if (val) { const q = QUESTS.find(x => x.id === id); if (q) total += q.xp; }
+    }
+    for (const [id, val] of Object.entries(day.penalties || {})) {
+      if (val) { const p = PENALTIES.find(x => x.id === id); if (p) total += p.xp; }
+    }
+  }
+  for (const spent of (state.spent || [])) total -= spent.cost;
+  return Math.max(0, total);
+}
+
+function getDayXP(state, key) {
+  const day = getDayData(state, key);
+  let total = 0;
+  for (const [id, val] of Object.entries(day.quests || {})) {
+    if (val) { const q = QUESTS.find(x => x.id === id); if (q) total += q.xp; }
+  }
+  for (const [id, val] of Object.entries(day.penalties || {})) {
+    if (val) { const p = PENALTIES.find(x => x.id === id); if (p) total += p.xp; }
+  }
+  return total;
+}
+
+function getStreak(state) {
+  let streak = 0;
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 365; i++) {
+    const key = d.toISOString().slice(0, 10);
+    const xp = getDayXP(state, key);
+    if (xp >= 50) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+function getLevelInfo(totalXP) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (totalXP >= LEVELS[i].min) return { level: i + 1, info: LEVELS[i], next: LEVELS[i + 1] || null };
+  }
+  return { level: 1, info: LEVELS[0], next: LEVELS[1] };
+}
+
+function getBooks(state) {
+  if (!state.books) state.books = {};
+  return BOOKS.map(b => ({ ...b, read: state.books[b.id] || 0 }));
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+
+function render() {
+  const state = loadState();
+  const key = TODAY_KEY();
+  const day = getDayData(state, key);
+  const totalXP = getTotalXP(state);
+  const dayXP = getDayXP(state, key);
+  const streak = getStreak(state);
+  const { level, info, next } = getLevelInfo(totalXP);
+
+  // Header date
+  const dateOpts = { weekday: 'long', month: 'long', day: 'numeric' };
+  const dateStr = currentDate.toLocaleDateString('en-US', dateOpts);
+  document.getElementById('header-date').textContent = dateStr;
+  const isToday = currentDate.toISOString().slice(0,10) === new Date().toISOString().slice(0,10);
+  document.getElementById('date-display').textContent = isToday ? 'Today' : currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  // XP displays
+  document.getElementById('today-xp').textContent = dayXP;
+  document.getElementById('total-xp-display').textContent = totalXP;
+  document.getElementById('xp-big').textContent = totalXP;
+  document.getElementById('streak-count').textContent = streak;
+
+  if (next) {
+    const pct = Math.min(100, Math.round(((totalXP - info.min) / (next.min - info.min)) * 100));
+    document.getElementById('xp-bar').style.width = pct + '%';
+    document.getElementById('next-level-label').textContent = `/ ${next.min.toLocaleString()} XP to Level ${level + 1}`;
+  } else {
+    document.getElementById('xp-bar').style.width = '100%';
+    document.getElementById('next-level-label').textContent = 'Max level reached';
+  }
+  document.getElementById('level-label').textContent = `Level ${level} — ${info.name}`;
+
+  // Quests
+  const ql = document.getElementById('quest-list');
+  ql.innerHTML = '';
+  for (const q of QUESTS) {
+    const done = !!day.quests[q.id];
+    const row = document.createElement('div');
+    row.className = 'quest-row';
+    row.innerHTML = `
+      <div class="checkbox ${done ? 'checked' : ''}"></div>
+      <div class="quest-body">
+        <div class="quest-name ${done ? 'done' : ''}">${q.name} <span class="badge ${q.badge}">${q.cat}</span></div>
+        <div class="quest-desc">${q.desc}</div>
+      </div>
+      <div class="quest-right">
+        <span class="xp-tag">+${q.xp} XP</span>
+      </div>`;
+    row.onclick = () => toggleQuest(q.id);
+    ql.appendChild(row);
+  }
+
+  // Penalties
+  const pl = document.getElementById('penalty-list');
+  pl.innerHTML = '';
+  for (const p of PENALTIES) {
+    const applied = !!day.penalties[p.id];
+    const row = document.createElement('div');
+    row.className = 'pen-row';
+    row.innerHTML = `
+      <div class="pen-check ${applied ? 'applied' : ''}"></div>
+      <div class="pen-body">
+        <div class="pen-name">${p.name}</div>
+        <div class="quest-desc">${p.desc}</div>
+      </div>
+      <div class="pen-cost">${p.xp} XP</div>`;
+    row.onclick = () => togglePenalty(p.id);
+    pl.appendChild(row);
+  }
+
+  // Books
+  const bl = document.getElementById('book-list');
+  bl.innerHTML = '';
+  const books = getBooks(state);
+  for (const b of books) {
+    const pct = Math.min(100, Math.round((b.read / b.total) * 100));
+    const row = document.createElement('div');
+    row.className = 'book-row';
+    row.style.flexDirection = 'column';
+    row.style.alignItems = 'stretch';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;">
+        <div class="book-title">${b.title} <span style="font-size:11px;color:var(--text-faint);font-weight:400;">— ${b.author}</span></div>
+        <div class="book-pages">${b.read}/${b.total}p</div>
+        <button class="book-btn" onclick="logPages('${b.id}')">+ pages</button>
+      </div>
+      <div class="book-bar-wrap"><div class="book-bar-fill" style="width:${pct}%"></div></div>`;
+    bl.appendChild(row);
+  }
+
+  // Rewards
+  const rl = document.getElementById('reward-list');
+  rl.innerHTML = '';
+  for (const r of REWARDS) {
+    const canAfford = totalXP >= r.cost;
+    const row = document.createElement('div');
+    row.className = 'reward-row';
+    row.innerHTML = `
+      <div class="reward-body"><strong>${r.name}</strong></div>
+      <div class="reward-cost">${r.cost} XP</div>
+      <button class="reward-btn" ${canAfford ? '' : 'disabled'} onclick="spendReward('${r.id}', ${r.cost}, '${r.name}')">Redeem</button>`;
+    rl.appendChild(row);
+  }
+
+  // Levels
+  const lg = document.getElementById('level-grid');
+  lg.innerHTML = '';
+  LEVELS.forEach((lv, i) => {
+    const lvNum = i + 1;
+    const isCurrent = lvNum === level;
+    const isUnlocked = totalXP >= lv.min && !isCurrent;
+    const div = document.createElement('div');
+    div.className = 'level-item' + (isCurrent ? ' current' : isUnlocked ? ' unlocked' : '');
+    div.innerHTML = `
+      <div class="level-name">Lv ${lvNum} · ${lv.name}</div>
+      <div class="level-range">${lv.min.toLocaleString()}${lv.max === Infinity ? '+' : '–' + lv.max.toLocaleString()} XP</div>`;
+    lg.appendChild(div);
+  });
+
+  // Streak dots (last 7 days ending today)
+  const sd = document.getElementById('streak-dots');
+  sd.innerHTML = '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const k = d.toISOString().slice(0, 10);
+    const xp = getDayXP(state, k);
+    const isT = i === 0;
+    const hit = xp >= 50;
+    const dot = document.createElement('div');
+    dot.className = 'streak-day';
+    dot.innerHTML = `
+      <div class="streak-dot ${isT ? 'today' : hit ? 'hit' : ''}">${hit || isT ? '✓' : ''}</div>
+      <div class="streak-day-lbl">${DAY_NAMES[d.getDay()]}</div>`;
+    sd.appendChild(dot);
+  }
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────────
+
+function toggleQuest(id) {
+  const state = loadState();
+  const key = TODAY_KEY();
+  const day = getDayData(state, key);
+  day.quests[id] = !day.quests[id];
+  const q = QUESTS.find(x => x.id === id);
+  saveState(state);
+  showToast(day.quests[id] ? `+${q.xp} XP — ${q.name}` : `Unchecked: ${q.name}`);
+  render();
+}
+
+function togglePenalty(id) {
+  const state = loadState();
+  const key = TODAY_KEY();
+  const day = getDayData(state, key);
+  day.penalties[id] = !day.penalties[id];
+  const p = PENALTIES.find(x => x.id === id);
+  saveState(state);
+  showToast(day.penalties[id] ? `${p.xp} XP — ${p.name}` : `Removed penalty: ${p.name}`);
+  render();
+}
+
+function logPages(bookId) {
+  const pages = parseInt(prompt('How many pages did you read today?'), 10);
+  if (!pages || isNaN(pages) || pages <= 0) return;
+  const state = loadState();
+  if (!state.books) state.books = {};
+  const b = BOOKS.find(x => x.id === bookId);
+  state.books[bookId] = Math.min(b.total, (state.books[bookId] || 0) + pages);
+  saveState(state);
+  showToast(`${pages} pages logged for ${b.title}`);
+  render();
+}
+
+function spendReward(id, cost, name) {
+  const state = loadState();
+  const totalXP = getTotalXP(state);
+  if (totalXP < cost) { showToast('Not enough XP!'); return; }
+  if (!confirm(`Spend ${cost} XP on: ${name}?`)) return;
+  if (!state.spent) state.spent = [];
+  state.spent.push({ id, cost, name, date: new Date().toISOString() });
+  saveState(state);
+  showToast(`Redeemed: ${name} — enjoy it, you earned it.`);
+  render();
+}
+
+function changeDay(delta) {
+  currentDate.setDate(currentDate.getDate() + delta);
+  render();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
