@@ -89,6 +89,58 @@
   .quest-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
   .xp-tag { font-size: 12px; font-weight: 600; color: var(--purple-mid); white-space: nowrap; flex-shrink: 0; margin-top: 3px; }
 
+  /* Journal prompt card */
+  .prompt-card {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--amber-light);
+    border-left: 3px solid var(--amber-mid);
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+    color: var(--morning-text);
+    line-height: 1.6;
+  }
+  .prompt-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .prompt-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+  .prompt-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .prompt-btn {
+    background: none;
+    border: 1px solid var(--amber-mid);
+    border-radius: 4px;
+    color: var(--morning-text);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0px 5px 2px;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+  .prompt-btn:hover { opacity: 1; background: rgba(0,0,0,0.05); }
+  .prompt-counter {
+    font-size: 10px;
+    opacity: 0.6;
+    min-width: 32px;
+    text-align: center;
+  }
+  .prompt-text {
+    font-style: italic;
+    font-size: 13px;
+  }
+
   .badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; display: inline-block; margin-left: 6px; vertical-align: middle; }
   .b-study   { background: var(--purple-light); color: var(--purple-dark); }
   .b-read    { background: var(--teal-light);   color: var(--teal-dark); }
@@ -276,12 +328,13 @@ const QUESTS = [
     name: 'Morning journal',
     xp: 20,
     cat: 'mindset', badge: 'b-mind',
-    desc: '5 min — what\'s on your mind, one intention for the day'
+    desc: '5 min — use today\'s prompt below to get started',
+    promptPool: 'morning'
   },
   {
     id: 'meditate',
     time: 'morning',
-    name: 'Meditate 5 min',
+    name: 'Meditate 10 min',
     xp: 20,
     cat: 'mindset', badge: 'b-mind',
     desc: 'Breath focus, Headspace, or Waking Up — before opening your phone'
@@ -289,10 +342,10 @@ const QUESTS = [
   {
     id: 'phone_am',
     time: 'morning',
-    name: 'Youtube-free morning',
+    name: 'Phone-free morning',
     xp: 30,
     cat: 'discipline', badge: 'b-disc',
-    desc: 'No youtube/insta until after your first LSAT drill block'
+    desc: 'No phone until after your first LSAT drill block'
   },
 
   // ── AFTERNOON ────────────────────────────────────────────────
@@ -355,6 +408,15 @@ const QUESTS = [
     desc: 'No phone 30 min before bed — read, stretch, or journal instead'
   },
   {
+    id: 'journal_pm',
+    time: 'evening',
+    name: 'Bedtime journal',
+    xp: 20,
+    cat: 'mindset', badge: 'b-mind',
+    desc: '5 min before bed — use today\'s prompt below to reflect',
+    promptPool: 'evening'
+  },
+  {
     id: 'sleep',
     time: 'evening',
     name: 'In bed by midnight',
@@ -362,15 +424,6 @@ const QUESTS = [
     cat: 'recovery', badge: 'b-rec',
     desc: '7+ hours is non-negotiable for ADD — protect it like a study block'
   },
-  {
-    id: 'journal_bed',
-    time: 'evening',
-    name: 'Journal Before Bed',
-    xp: 15,
-    cat: 'recovery', badge: 'b-rec',
-    desc: 'Write down a reflection of the day, what went well, what could be improved.'
-  }, 
-  
 ];
 
 const PENALTIES = [
@@ -387,10 +440,10 @@ const PENALTIES = [
     desc: 'Scrolling after you\'ve gone to bed'
   },
   {
-    id: 'relapse',
-    name: 'Relapse episode',
+    id: 'binge',
+    name: 'Binge eating episode',
     xp: -25,
-    desc: 'Take accountability'
+    desc: 'Honest self-report only — no shame, just accountability'
   },
   {
     id: 'skip',
@@ -408,18 +461,19 @@ const PENALTIES = [
 
 const BOOKS = [
   // Add your real books here. 'read' starts at 0 — it gets saved automatically.
-  { id: 'b1', title: 'Legal Writing In Plain English',   author: 'Bryan A. Garner',     total: 355 },
-  { id: 'b2', title: 'Law School Exams: A Guide to Better Grades',   author: 'Alex Schimel', total: 138 },
-  { id: 'b3', title: 'The Art of Happiness',         author: 'Dalai Lama',     total: 311 },
-  { id: 'b4', title: 'Louis D. Brandeis: A Life',         author: 'Melvin I. Urofsky',       total: 756 },
-  { id: 'b5', title: 'Six Great Dialogues',              author: 'Plato',        total: 460 },
+  { id: 'b1', title: 'Thinking, Fast and Slow',   author: 'Kahneman',     total: 499 },
+  { id: 'b2', title: 'The Obstacle Is the Way',   author: 'Ryan Holiday', total: 224 },
+  { id: 'b3', title: 'How to Win Friends',         author: 'Carnegie',     total: 288 },
+  { id: 'b4', title: 'The Power of Habit',         author: 'Duhigg',       total: 371 },
+  { id: 'b5', title: 'Atomic Habits',              author: 'Clear',        total: 320 },
 ];
 
 const REWARDS = [
   // Screen time rewards — cost is in XP
   { id: 'r1', name: '1 hr guilt-free TV / streaming', cost: 100 },
   { id: 'r2', name: 'Full evening off screens',        cost: 200 },
-  { id: 'r3', name: 'Full day off — zero guilt',       cost: 1000 },
+  { id: 'r3', name: 'Gaming session (3 hrs)',           cost: 300 },
+  { id: 'r4', name: 'Full day off — zero guilt',       cost: 500 },
 ];
 
 const LEVELS = [
@@ -431,14 +485,129 @@ const LEVELS = [
   { name: 'Prestige',  min: 18000 },
 ];
 
+// ── Journal prompts ──────────────────────────────────────────────
+// Add or remove prompts freely. They rotate daily automatically.
+const MORNING_PROMPTS = [
+  // Intention & focus
+  "What's the one thing that would make today feel like a real win? Write it down and commit to it.",
+  "On a scale of 1–10, how motivated do you feel right now? What's one thing you could do in the next 10 minutes to move that number up?",
+  "What does the most disciplined version of you do this morning that your lazy side wants to skip?",
+  "Pick one habit you're building. Why does it actually matter to you — not the surface reason, the real one?",
+  "What's the first thing you're going to do after you close this journal? Make it specific.",
+
+  // ADD & distraction
+  "What's most likely to pull you off track today? Name it. Now name one thing you'll do when it happens.",
+  "What environment do you need to set up right now to make focus easier — phone, space, noise, food?",
+  "Is there anything cluttering your head that you need to write down or decide before you can focus?",
+  "What does a focused hour actually feel like for you? What conditions were true the last time you had one?",
+  "What's the smallest possible version of your study goal today — the version you could do even on a bad brain day?",
+
+  // LSAT & law school
+  "Where are you in your LSAT prep honestly — not where you want to be, where you actually are?",
+  "What type of question or section has been giving you the most trouble? What's your plan for it today?",
+  "Why do you want to go to law school? Write the real answer, not the one for applications.",
+  "What would the person you want to become by August 8th do with this morning?",
+  "If you took the LSAT today, what would you wish you had done more of in the past week?",
+
+  // Bad habits & self-awareness
+  "What bad habit is most likely to show up today? What's your plan when the urge hits?",
+  "When you reach for your phone out of boredom, what are you usually avoiding? Name it.",
+  "Is there anything you've been eating, avoiding, or doing compulsively that's worth paying attention to?",
+  "What's one small thing you could do differently today that your future self would thank you for?",
+
+  // Gratitude & mindset
+  "Write down three specific things you're grateful for. At least one has to be from yesterday.",
+  "What's something about this summer — even something hard — that you'll be glad you did?",
+  "What's a belief about yourself you've been carrying that might not be true? Where did it come from?",
+  "What are you looking forward to today, even if it's small?",
+  "What would you tell a close friend who was in exactly your situation right now?",
+  "You're a recent grad with the whole summer to work on yourself. What does that actually mean to you?",
+];
+
+const EVENING_PROMPTS = [
+  // Honest daily review
+  "Did you do what you set out to do today? If not, what actually got in the way?",
+  "Rate your focus today 1–10. What made it better or worse than yesterday?",
+  "What's one moment from today you're proud of, even if nobody else noticed?",
+  "What's one moment where you could have done better? No judgment — just honest.",
+  "Did you stick to your habits today? Which ones slipped, and why?",
+
+  // ADD & distraction debrief
+  "Where did you lose the most time today? What were you doing instead of what you planned?",
+  "What pulled you toward your phone today? What were you trying to get from it?",
+  "When did you feel most focused today? What was different about that moment?",
+  "Did you give yourself real breaks today, or did you just drift? What's the difference for you?",
+  "What's one thing you'd change about how you structured today?",
+
+  // LSAT & study debrief
+  "What did you actually learn from your LSAT work today — not just what you covered, what you understood?",
+  "What question type or mistake showed up again today that you've seen before?",
+  "Did your study session feel productive or just busy? What's the difference for you?",
+  "What's one thing about the LSAT you understand better now than you did a week ago?",
+  "If you studied today, how was your energy and attention? What does that tell you about your routine?",
+
+  // Habits & bad habit check-in
+  "How did your eating feel today — controlled, mindless, emotional? What drove it?",
+  "Did you use your phone intentionally today or reactively? Be honest.",
+  "What's one bad habit that showed up today? What triggered it?",
+  "What's one good habit you actually followed through on today? Let yourself feel good about it.",
+
+  // Emotional wind-down
+  "What's the biggest thing on your mind right now? Write until there's nothing left to say.",
+  "What do you need to let go of before you sleep — a worry, a comparison, a frustration?",
+  "How did you treat yourself today — with patience or with harshness? Which did you actually deserve?",
+  "Is there anything unresolved from today that's worth a single sentence to put to rest?",
+  "What's one thing you want to do differently tomorrow? Just one.",
+  "Who or what are you grateful for today? Be specific — vague gratitude doesn't count.",
+];
+
 // ═══════════════════════════════════════════════════════════════
 //  END OF CUSTOMIZATION — don't edit below this line
 // ═══════════════════════════════════════════════════════════════
 
+// Returns local date string YYYY-MM-DD without timezone shift
+function localDateKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Returns a prompt that is stable for the day but rotates each day
+function getDailyPromptIndex(pool) {
+  const prompts = pool === 'morning' ? MORNING_PROMPTS : EVENING_PROMPTS;
+  const today = new Date();
+  const dayNum = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  return dayNum % prompts.length;
+}
+
+// Per-pool in-memory offset so cycling doesn't affect the other pool
+const promptOffsets = { morning: 0, evening: 0 };
+
+function getPrompt(pool) {
+  const prompts = pool === 'morning' ? MORNING_PROMPTS : EVENING_PROMPTS;
+  const base = getDailyPromptIndex(pool);
+  const idx = (base + promptOffsets[pool]) % prompts.length;
+  return { text: prompts[idx], idx, total: prompts.length };
+}
+
+function cyclePrompt(pool, dir) {
+  const prompts = pool === 'morning' ? MORNING_PROMPTS : EVENING_PROMPTS;
+  promptOffsets[pool] = (promptOffsets[pool] + dir + prompts.length) % prompts.length;
+  // Update just the prompt card without re-rendering everything
+  const card = document.getElementById(`prompt-card-${pool}`);
+  const counter = document.getElementById(`prompt-counter-${pool}`);
+  if (card && counter) {
+    const { text, idx, total } = getPrompt(pool);
+    card.querySelector('.prompt-text').textContent = `"${text}"`;
+    counter.textContent = `${idx + 1} / ${total}`;
+  }
+}
+
 let currentDate = new Date();
 currentDate.setHours(0, 0, 0, 0);
 
-const dateKey = (d) => d.toISOString().slice(0, 10);
+const dateKey = (d) => localDateKey(d);
 const todayKey = () => dateKey(currentDate);
 
 function loadState() {
@@ -554,11 +723,30 @@ function render() {
       const done = !!day.quests[q.id];
       const row = document.createElement('div');
       row.className = 'quest-row';
+
+      let promptHTML = '';
+      if (q.promptPool) {
+        const { text, idx, total } = getPrompt(q.promptPool);
+        promptHTML = `
+          <div class="prompt-card" id="prompt-card-${q.promptPool}">
+            <div class="prompt-top">
+              <span class="prompt-label">Today's prompt</span>
+              <div class="prompt-nav">
+                <button class="prompt-btn" onclick="event.stopPropagation();cyclePrompt('${q.promptPool}',-1)">‹</button>
+                <span class="prompt-counter" id="prompt-counter-${q.promptPool}">${idx + 1} / ${total}</span>
+                <button class="prompt-btn" onclick="event.stopPropagation();cyclePrompt('${q.promptPool}',1)">›</button>
+              </div>
+            </div>
+            <div class="prompt-text">"${text}"</div>
+          </div>`;
+      }
+
       row.innerHTML = `
         <div class="checkbox ${done ? 'checked' : ''}"></div>
         <div class="quest-body">
           <div class="quest-name ${done ? 'done' : ''}">${q.name}<span class="badge ${q.badge}">${q.cat}</span></div>
           <div class="quest-desc">${q.desc}</div>
+          ${promptHTML}
         </div>
         <div class="xp-tag">+${q.xp}</div>`;
       row.onclick = () => toggleQuest(q.id);
