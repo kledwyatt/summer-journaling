@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Summer Grind — Daily Tracker</title>
+<title>Summer Grind</title>
 <style>
+
   :root {
     --purple-light: #EEEDFE;
     --purple-mid: #534AB7;
@@ -216,6 +217,14 @@
   .todo-text.done { color: var(--text-faint); text-decoration: line-through; }
   .todo-delete { font-size: 16px; color: var(--text-faint); cursor: pointer; padding: 0 2px; flex-shrink: 0; line-height: 1.4; opacity: 0; transition: opacity 0.1s; }
   .todo-row:hover .todo-delete { opacity: 1; }
+
+  .why-anchor { font-size:13px; font-style:italic; color:var(--purple-mid); cursor:pointer; text-align:center; max-width:320px; padding:4px 10px; border-radius:6px; border:1px dashed transparent; }
+  .why-anchor:hover { border-color: var(--purple-mid); }
+  .mood-btn { width:32px; height:32px; border-radius:6px; border:1.5px solid var(--border); background:var(--bg); font-size:12px; font-weight:600; cursor:pointer; transition:all .12s; color:var(--text-muted); }
+  .mood-btn:hover { border-color:var(--purple-mid); color:var(--purple-mid); }
+  .mood-btn.selected { background:var(--purple-mid); border-color:var(--purple-mid); color:white; }
+  .week-streak-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin:8px 0; }
+
 </style>
 </head>
 <body>
@@ -224,6 +233,9 @@
   <div class="header-left">
     <h1>Summer Grind</h1>
     <p id="header-date"></p>
+  </div>
+  <div style="flex:1;display:flex;justify-content:center;align-items:center;padding:0 1rem;">
+    <div id="why-anchor" class="why-anchor" onclick="editWhy()" title="Click to edit your why">Click to set your why ✏</div>
   </div>
   <div class="date-nav">
     <button onclick="changeDay(-1)">&#8249;</button>
@@ -237,56 +249,59 @@
 
     <div class="card">
       <div class="metrics">
-        <div class="metric">
-          <div class="metric-val" id="today-xp" style="color:var(--purple-mid)">0</div>
-          <div class="metric-lbl">XP today</div>
-        </div>
-        <div class="metric">
-          <div class="metric-val" id="streak-count" style="color:var(--teal-mid)">0</div>
-          <div class="metric-lbl">day streak</div>
-        </div>
-        <div class="metric">
-          <div class="metric-val" id="total-xp-stat" style="color:var(--amber-mid)">0</div>
-          <div class="metric-lbl">total XP</div>
-        </div>
+        <div class="metric"><div class="metric-val" id="today-xp" style="color:var(--purple-mid)">0</div><div class="metric-lbl">XP today</div></div>
+        <div class="metric"><div class="metric-val" id="streak-count" style="color:var(--teal-mid)">0</div><div class="metric-lbl">day streak</div></div>
+        <div class="metric"><div class="metric-val" id="total-xp-stat" style="color:var(--amber-mid)">0</div><div class="metric-lbl">total XP</div></div>
       </div>
-      <div>
-        <div class="xp-top">
-          <span class="xp-number" id="xp-big">0</span>
-          <span style="font-size:13px;color:var(--text-muted)" id="next-label">/ 500 XP to Level 2</span>
-        </div>
-        <div class="xp-track"><div class="xp-fill" id="xp-bar" style="width:0%"></div></div>
-        <div class="xp-sublabel" id="level-label">Level 1 — Initiate</div>
+      <div class="xp-top">
+        <span class="xp-number" id="xp-big">0</span>
+        <span style="font-size:13px;color:var(--text-muted)" id="next-label">/ 500 XP to Level 2</span>
+      </div>
+      <div class="xp-track"><div class="xp-fill" id="xp-bar" style="width:0%"></div></div>
+      <div class="xp-sublabel" id="level-label">Level 1 — Initiate</div>
+    </div>
+
+    <div class="card"><div class="card-title">Daily quests</div><div id="quest-list"></div></div>
+    <div class="card"><div class="card-title">Penalties — check if it happened today</div><div id="penalty-list"></div></div>
+    <div class="card"><div class="card-title">Reading tracker</div><div id="book-list"></div></div>
+
+    <div class="card">
+      <div class="card-title">🌙 Evening — mood check-in</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">How do you feel right now? <span style="color:var(--text-faint);font-size:12px;">(tap a number)</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="mood-buttons"></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">What's driving that number?</div>
+      <textarea id="mood-note" placeholder="e.g. Felt scattered after lunch, but evening drill went well…" style="width:100%;margin-top:6px;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);resize:vertical;min-height:60px;font-family:inherit;" oninput="saveMoodNote()"></textarea>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🧠 Evening — thought record <span style="font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-faint)">(CBT — do in physical journal)</span></div>
+      <div style="background:var(--amber-light);border-left:3px solid var(--amber-mid);border-radius:0 8px 8px 0;padding:12px 14px;">
+        <div style="font-size:13px;font-weight:600;color:var(--morning-text);margin-bottom:6px;">Tonight in your journal:</div>
+        <div style="font-size:12px;color:var(--morning-text);line-height:1.9;"><b>1.</b> What happened? &nbsp;<b>2.</b> Automatic thought? &nbsp;<b>3.</b> What distortion? &nbsp;<b>4.</b> Evidence against it? &nbsp;<b>5.</b> More balanced version.</div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Daily quests</div>
-      <div id="quest-list"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Penalties — check if it happened today</div>
-      <div id="penalty-list"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Reading tracker</div>
-      <div id="book-list"></div>
+      <div class="card-title">📋 Evening — tomorrow's plan</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">What, when, and where. Specific plans are 2–3× more likely to happen.</div>
+      <div style="margin-bottom:10px;"><label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">What? <span style="font-weight:400;color:var(--text-faint)">(specific task)</span></label><textarea id="plan-what" placeholder="e.g. Two 25-min LR drill blocks + error review" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);resize:vertical;min-height:52px;font-family:inherit;" oninput="savePlan()"></textarea></div>
+      <div style="margin-bottom:10px;"><label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">When? <span style="font-weight:400;color:var(--text-faint)">(time of day)</span></label><input type="text" id="plan-when" placeholder="e.g. After morning journal, around 10am" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-family:inherit;" oninput="savePlan()"></div>
+      <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">Where? <span style="font-weight:400;color:var(--text-faint)">(location + setup)</span></label><input type="text" id="plan-where" placeholder="e.g. Desk, phone in bedroom, headphones on" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-family:inherit;" oninput="savePlan()"></div>
     </div>
 
   </div>
+
   <div class="right-col">
 
     <div class="card">
       <div class="card-title">This week</div>
-      <div class="streak-row" id="streak-dots"></div>
+      <div class="week-streak-grid" id="streak-dots"></div>
     </div>
 
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
         <div class="card-title" style="margin-bottom:0;">To-do</div>
-        <button id="clear-done-btn" onclick="clearDoneTodos()" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:5px;background:none;color:var(--text-muted);cursor:pointer;">Clear done</button>
+        <button onclick="clearDoneTodos()" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:5px;background:none;color:var(--text-muted);cursor:pointer;">Clear done</button>
       </div>
       <div id="todo-list"></div>
       <div style="display:flex;gap:8px;margin-top:10px;">
@@ -295,14 +310,26 @@
       </div>
     </div>
 
+    <div class="card"><div class="card-title">Spend XP on rewards</div><div id="reward-list"></div></div>
+    <div class="card"><div class="card-title">Level tiers</div><div class="level-grid" id="level-grid"></div></div>
+
     <div class="card">
-      <div class="card-title">Spend XP on rewards</div>
-      <div id="reward-list"></div>
+      <div class="card-title">Mood this week</div>
+      <canvas id="mood-chart" style="width:100%;display:none;border-radius:4px;"></canvas>
+      <div id="mood-chart-empty" style="font-size:12px;color:var(--text-faint);padding:1rem 0;text-align:center;">Log your mood each evening to see the trend</div>
     </div>
 
     <div class="card">
-      <div class="card-title">Level tiers</div>
-      <div class="level-grid" id="level-grid"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+        <div class="card-title" style="margin-bottom:0;">📅 Weekly review</div>
+        <span style="font-size:11px;color:var(--text-faint);">Best done Sunday</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">One honest review per week beats seven days of journaling that never connect.</div>
+      <div style="margin-bottom:10px;"><label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">What went well?</label><textarea id="wr-well" placeholder="Wins, habits that stuck, moments of focus…" oninput="saveWeeklyReview()" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);resize:vertical;min-height:52px;font-family:inherit;"></textarea></div>
+      <div style="margin-bottom:10px;"><label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">What didn't go well?</label><textarea id="wr-bad" placeholder="What slipped, what you avoided…" oninput="saveWeeklyReview()" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);resize:vertical;min-height:52px;font-family:inherit;"></textarea></div>
+      <div style="margin-bottom:10px;"><label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">What pattern showed up most?</label><textarea id="wr-pattern" placeholder="e.g. I study well in the morning but crash after lunch…" oninput="saveWeeklyReview()" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);resize:vertical;min-height:52px;font-family:inherit;"></textarea></div>
+      <div><label style="display:block;font-size:12px;font-weight:600;margin-bottom:5px;">One thing to change next week?</label><textarea id="wr-change" placeholder="Specific and small…" oninput="saveWeeklyReview()" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);resize:vertical;min-height:52px;font-family:inherit;"></textarea></div>
+      <div style="font-size:11px;color:var(--text-faint);margin-top:8px;" id="wr-saved-label"></div>
     </div>
 
   </div>
@@ -315,10 +342,6 @@
 //  CUSTOMIZE HERE — edit this section to change quests, books,
 //  rewards, and penalties. Don't touch anything below the line.
 // ═══════════════════════════════════════════════════════════════
-
-// TIME OF DAY OPTIONS: 'morning' | 'afternoon' | 'evening'
-// BADGE OPTIONS: 'b-study' | 'b-read' | 'b-mind' | 'b-disc' | 'b-rec'
-// CAT is the label shown on the badge (any short word)
 
 const QUESTS = [
   // ── MORNING ─────────────────────────────────────────────────
@@ -560,6 +583,8 @@ const EVENING_PROMPTS = [
   "What's one thing you want to do differently tomorrow? Just one.",
   "Who or what are you grateful for today? Be specific — vague gratitude doesn't count.",
 ];
+
+
 
 // ═══════════════════════════════════════════════════════════════
 //  END OF CUSTOMIZATION — don't edit below this line
@@ -991,8 +1016,159 @@ function clearDoneTodos() {
   showToast('Cleared completed to-dos.');
 }
 
+// ── Why anchor ────────────────────────────────────────────────────
+function renderWhy() {
+  const state = loadState();
+  const el = document.getElementById('why-anchor');
+  if (!el) return;
+  if (state.why) { el.textContent = state.why; el.style.fontStyle='italic'; el.style.color='var(--purple-mid)'; }
+  else { el.textContent = 'Click to set your why ✏'; el.style.fontStyle='normal'; el.style.color='var(--text-faint)'; }
+}
+function editWhy() {
+  const state = loadState();
+  const val = prompt('Your why:', state.why || '');
+  if (val === null) return;
+  state.why = val.trim(); saveState(state); renderWhy();
+}
+
+// ── Mood ──────────────────────────────────────────────────────────
+function renderMood() {
+  const state = loadState();
+  const day = getDayData(state, todayKey());
+  const container = document.getElementById('mood-buttons');
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'mood-btn' + (day.mood === i ? ' selected' : '');
+    btn.textContent = i;
+    btn.onclick = () => setMood(i);
+    container.appendChild(btn);
+  }
+  const noteEl = document.getElementById('mood-note');
+  if (noteEl && document.activeElement !== noteEl) noteEl.value = day.moodNote || '';
+}
+function setMood(val) {
+  const state = loadState();
+  const day = getDayData(state, todayKey());
+  day.mood = val; saveState(state);
+  renderMood(); showToast('Mood logged: ' + val + '/10');
+  setTimeout(drawMoodChart, 50);
+}
+function saveMoodNote() {
+  const state = loadState();
+  const day = getDayData(state, todayKey());
+  const el = document.getElementById('mood-note');
+  if (el) { day.moodNote = el.value; saveState(state); }
+}
+
+// ── Mood chart ────────────────────────────────────────────────────
+function drawMoodChart() {
+  const canvas = document.getElementById('mood-chart');
+  const empty = document.getElementById('mood-chart-empty');
+  if (!canvas) return;
+  const state = loadState();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const sun = new Date(today); sun.setDate(today.getDate() - today.getDay());
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(sun); d.setDate(sun.getDate() + i);
+    const dd = (state.days || {})[localDateKey(d)] || {};
+    days.push({ label:['S','M','T','W','T','F','S'][i], mood: typeof dd.mood==='number' ? dd.mood : null });
+  }
+  const hasData = days.some(d => d.mood !== null);
+  if (!hasData) { canvas.style.display='none'; if(empty) empty.style.display='block'; return; }
+  canvas.style.display='block'; if(empty) empty.style.display='none';
+  const W = Math.max(180, canvas.parentElement ? canvas.parentElement.clientWidth-40 : 220);
+  const H=110; canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
+  const pl=26,pr=8,pt=8,pb=20,cW=W-pl-pr,cH=H-pt-pb;
+  ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=1;
+  [2,5,8,10].forEach(v=>{
+    const y=pt+cH-((v-1)/9)*cH;
+    ctx.beginPath(); ctx.moveTo(pl,y); ctx.lineTo(pl+cW,y); ctx.stroke();
+    ctx.fillStyle='#bbb'; ctx.font='9px system-ui'; ctx.textAlign='right'; ctx.fillText(v,pl-3,y+3);
+  });
+  ctx.fillStyle='#bbb'; ctx.font='10px system-ui'; ctx.textAlign='center';
+  days.forEach((d,i)=>ctx.fillText(d.label, pl+(i/6)*cW, H-4));
+  const pts=days.map((d,i)=>({x:pl+(i/6)*cW, y:d.mood!==null?pt+cH-((d.mood-1)/9)*cH:null}));
+  const valid=pts.filter(p=>p.y!==null);
+  if (valid.length>=2) {
+    ctx.beginPath(); ctx.moveTo(valid[0].x,pt+cH);
+    valid.forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.lineTo(valid[valid.length-1].x,pt+cH); ctx.closePath();
+    ctx.fillStyle='rgba(83,74,183,0.12)'; ctx.fill();
+    ctx.beginPath(); ctx.strokeStyle='#534AB7'; ctx.lineWidth=2.5; ctx.lineJoin='round';
+    valid.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+  }
+  pts.forEach(p=>{
+    if(p.y===null) return;
+    ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2);
+    ctx.fillStyle='#534AB7'; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  });
+}
+
+// ── Tomorrow's plan ───────────────────────────────────────────────
+function renderPlan() {
+  const state = loadState();
+  const day = getDayData(state, todayKey());
+  const plan = day.plan || {};
+  ['what','when','where'].forEach(f => {
+    const el = document.getElementById('plan-' + f);
+    if (el && document.activeElement !== el) el.value = plan[f] || '';
+  });
+}
+function savePlan() {
+  const state = loadState();
+  const day = getDayData(state, todayKey());
+  if (!day.plan) day.plan = {};
+  ['what','when','where'].forEach(f => {
+    const el = document.getElementById('plan-' + f);
+    if (el) day.plan[f] = el.value;
+  });
+  saveState(state);
+}
+
+// ── Weekly review ─────────────────────────────────────────────────
+function getWeekKey() {
+  const t = new Date(); t.setHours(0,0,0,0);
+  const sun = new Date(t); sun.setDate(t.getDate() - t.getDay());
+  return 'week-' + localDateKey(sun);
+}
+function renderWeeklyReview() {
+  const state = loadState();
+  const wr = (state.weeklyReviews || {})[getWeekKey()] || {};
+  ['well','bad','pattern','change'].forEach(f => {
+    const el = document.getElementById('wr-' + f);
+    if (el && document.activeElement !== el) el.value = wr[f] || '';
+  });
+  const lbl = document.getElementById('wr-saved-label');
+  if (lbl) lbl.textContent = wr.savedAt ? 'Last saved ' + new Date(wr.savedAt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) : '';
+}
+function saveWeeklyReview() {
+  const state = loadState();
+  if (!state.weeklyReviews) state.weeklyReviews = {};
+  const wk = getWeekKey();
+  if (!state.weeklyReviews[wk]) state.weeklyReviews[wk] = {};
+  ['well','bad','pattern','change'].forEach(f => {
+    const el = document.getElementById('wr-' + f);
+    if (el) state.weeklyReviews[wk][f] = el.value;
+  });
+  state.weeklyReviews[wk].savedAt = new Date().toISOString();
+  saveState(state);
+  const lbl = document.getElementById('wr-saved-label');
+  if (lbl) lbl.textContent = 'Saved just now';
+}
+
+// ── Init ──────────────────────────────────────────────────────────
 render();
 renderTodos();
+renderWhy();
+renderMood();
+renderPlan();
+renderWeeklyReview();
+setTimeout(drawMoodChart, 150);
+
 </script>
 </body>
 </html>
